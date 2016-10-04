@@ -62,15 +62,14 @@ class cPSRepository
 
             )
             {
-                Write-Verbose "PS Respository named $($this.Name) is registered but has some incorrect settings."
+                Write-Verbose "PS Respository ($($this.Name)) is registered but has some incorrect settings."
                 return $false
             }
-            Write-Verbose "PS Repository is already existent with the correct properties.  Will return true"
+            Write-Verbose "PS Repository ($($this.Name)) already exists with the correct properties."
             return $true
         }
         else
         {
-            Write-Verbose "Ensue is set to Absent"
             if (-not $repo) { return $true }
             return $false
         }
@@ -79,12 +78,13 @@ class cPSRepository
 
     [void] Set()
     {
-        Write-Verbose "Running Set Method"
+        Write-Verbose "Running the Set method"
 
         $repo = Get-PsRepository -Name $this.Name -ErrorAction SilentlyContinue
 
         if ($this.Ensure -eq 'Present')
         {
+            # hash the required/defaulted parameters
             $params = @{
                 Name                      = $this.Name
                 SourceLocation            = $this.SourceLocation
@@ -93,32 +93,25 @@ class cPSRepository
                 PackageManagementProvider = $this.PackageManagementProvider
             }
 
-            if ($this.ScriptPublishLocation) 
-            { 
-                Write-Verbose "Adding Publish Location"
-                $params.Add('ScriptPublishLocation', $this.ScriptPublishLocation) 
-            }
-            if ($this.ScriptSourceLocation)  
-            { 
-                Write-Verbose "Adding Source Location"
-                $params.Add('ScriptSourceLocation', $this.ScriptSourceLocation) 
-            }
+            # add optional specified parameters to hash
+            if ($this.PublishLocation)       { $params.Add('PublishLocation', $this.PublishLocation) }
+            if ($this.ScriptPublishLocation) { $params.Add('ScriptPublishLocation', $this.ScriptPublishLocation) }
+            if ($this.ScriptSourceLocation)  { $params.Add('ScriptSourceLocation', $this.ScriptSourceLocation) }
 
             if ($repo)
             {
-                Write-Verbose "The repo exists, will use set-psrepository to correct incorrect settings."
-                Write-Verbose "Will set the repo to use the following settings: $params"
-                Write-Verbose "The InstallationPolicy is set to: $($this.InstallationPolicy)"
+                Write-Verbose "The repo ($($this.Name)) exists, will use Set-PSRepository to correct incorrect settings."
                 Set-PsRepository @params
             }
             else 
             {
-                Write-Verbose "The repo will be registered"
+                Write-Verbose "The repo ($($this.Name)) does not exist yet, it will be registered"
                 Register-PSRepository @params
             }
         }
         else
         {
+            Write-Verbose "The repo ($($this.Name)) will be unregistered."
             Unregister-PSRepository -Name $this.Name 
         }
     }
