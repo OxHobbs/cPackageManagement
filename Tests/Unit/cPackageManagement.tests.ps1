@@ -1,4 +1,4 @@
-using module ..\..\cPackageManagement.psm1
+using module cPackageManagement
 
 $r = [cPSRepository]::new()
 
