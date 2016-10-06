@@ -175,3 +175,147 @@ class cNugetInitPackages
         return $false
     }
 }
+
+[DscResource()]
+class cPublishPSModule
+{
+    [DscProperty(Key)]
+    [String] $Name
+
+    [DscProperty()]
+    [String] $PSRepository = 'PSGallery'
+
+    [DscProperty()]
+    [String] $NuGetApiKey
+
+    [DscProperty()]
+    [String] $ProjectUri
+
+    [DscProperty()]
+    [String] $LicenseUri
+    
+    [DscProperty()]
+    [String] $IconUri
+
+    [DscProperty()]
+    [Version] $RequiredVersion
+
+    [DscProperty()]
+    [Version] $FormatVersion
+
+    [DscProperty()]
+    [String[]] $ReleaseNotes
+
+    [DscProperty()]
+    [String[]] $Tags
+
+    [DscProperty(NotConfigurable)]
+    [String] $ErrorTrace = ''
+
+    [cPublishPSModule] Get()
+    {
+        return $this
+    }
+
+    [bool] Test()
+    {
+        if ($this.VerifyParams())
+        {
+            $params = $this.CollectParams('Find')
+            if (Find-Module @params -ErrorAction SilentlyContinue)
+            {
+                return $true
+            }
+        }
+        return $false
+    }
+
+    [void] Set()
+    {
+        if ($this.VerifyParams())
+        {
+            $params = $this.CollectParams('All')
+            Publish-Module @params 
+        }
+        else
+        {
+            Write-Error $this.ErrorTrace
+        }
+
+    }
+
+    [void] AddTrace($Message)
+    {
+        $this.ErrorTrace += ($Message + ';`n')
+    }
+
+    [bool] VerifyPsRepo()
+    {
+        if (Get-PSRepository -Name $this.Name -ErrorAction SilentlyContinue) 
+        {
+            Write-Verbose "The PowerShell Repository is registered"
+            return $true
+        }    
+        AddTrace("The PS Repository ($($this.PSRepository)) does not exist.") 
+        return $false    
+    }
+
+    [bool] VerifyModule()
+    {
+        $modules = Get-Module -Name $this.Name -ListAvailable
+        if ($modules)
+        {
+            if ($this.RequiredVersion -in $modules.version)
+            {
+                Write-Verbose "Found the correct module version: $($this.RequiredVersion)"
+                return $true
+            }
+            else
+            {
+                AddTrace("The required version ($($this.RequiredVersion)) is not available on this host.")
+            }
+        }
+        else
+        {
+            AddTrace("The PowerShell Module ($($this.Name)) is not available on system.")
+        }
+        return $false    
+    }
+
+    [bool] VerifyParams()
+    {
+        if ($this.VerifyPsRepo() -and $this.VerifyModule())
+        {
+            Write-Verbose "PsRepo and Module verfied."
+            return $true
+        }
+        else 
+        {
+            Write-Error $this.ErrorTrace
+            return $false
+        }
+    }
+
+    [System.Collections.Hashtable] CollectParams(
+        [ValidateSet('Find', 'All')] 
+        [String] $ParamSet
+    )
+    {
+        $params = @{
+            Name = $this.Name
+            Repository = $this.PSRepository
+        }
+        if ($this.RequiredVersion)  { $params.Add('RequiredVersion', $this.RequiredVersion) }
+        if ($ParamSet -eq 'Find')   { return $params }
+
+        if ($this.NuGetApiKey)      { $params.Add('NuGetApiKey', $this.NuGetApiKey) }
+        if ($this.ProjectUri)       { $params.Add('ProjectUri', $this.ProjectUri) }
+        if ($this.FormatVersion)    { $params.Add('FormatVersion', $this.FormatVersion) }
+        if ($this.ReleaseNotes)     { $params.Add('ReleaseNotes', $this.ReleaseNotes) }
+        if ($this.Tags)             { $params.Add('Tags', $this.Tags) }
+        if ($this.LicenseUri)       { $params.Add('LicenseUri', $this.LicenseUri) }
+        if ($this.IconUri)          { $params.Add('IconUri', $this.IconUri) }
+        return $params
+    }
+
+}

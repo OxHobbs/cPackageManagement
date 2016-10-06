@@ -14,7 +14,15 @@ This resource allows you to register/unregister a PowerShell Repository on a sys
 * **InstallationPolicy**: Specify whether the repository is trusted or untrusted { `'Trusted'` | `'Untrusted'` }.  Defaults to 'Untrusted'
 * **PackageManagementProvider**: Specify the provider to use for interfacing with the respository.  Defaults to 'NuGet'
 
+### cNugetInitPackages
+
+### cPublishPSModule
+
+
 ## Change Log
+
+### v0.3.0
+* Added the cPublishPSModule resource.  This resource allows you to Publish a module to a specified PowerShell Repo.
 
 ### v0.2.0
 * Added the cNugetInitPackages resource.  This resource maps to the nuget init command that registers all package in a directory a a feed directory.
