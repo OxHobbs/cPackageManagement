@@ -15,5 +15,10 @@ This resource allows you to register/unregister a PowerShell Repository on a sys
 * **PackageManagementProvider**: Specify the provider to use for interfacing with the respository.  Defaults to 'NuGet'
 
 ## Change Log
+
+### v0.2.0
+* Added the cNugetInitPackages resource.  This resource maps to the nuget init command that registers all package in a directory a a feed directory.
+
 ### v0.1.0
 * Added the cPSRepository resource.  This is the single resource in this version
+

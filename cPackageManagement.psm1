@@ -88,7 +88,6 @@ class cPSRepository
             $params = @{
                 Name                      = $this.Name
                 SourceLocation            = $this.SourceLocation
-                PublishLocation           = $this.PublishLocation
                 InstallationPolicy        = $this.InstallationPolicy
                 PackageManagementProvider = $this.PackageManagementProvider
             }
@@ -114,5 +113,65 @@ class cPSRepository
             Write-Verbose "The repo ($($this.Name)) will be unregistered."
             Unregister-PSRepository -Name $this.Name 
         }
+    }
+}
+
+[DscResource()]
+class cNugetInitPackages
+{
+    [DscProperty(Key)]
+    [String] $SourceDirectory
+
+    [DscProperty(Mandatory)]
+    [String] $DestinationDirectory
+
+    [DscProperty()]
+    [String] $NuGetExePath
+
+    [cNugetInitPackages] Get()
+    {
+        return $this
+    }
+
+    [void] Set()
+    {
+        $nugetExe = "nuget.exe"
+        if ($this.NuGetExePath)
+        {
+            $nugetExe = $this.NuGetExePath
+        }
+
+        $src = (Get-ChildItem -Path $this.SourceDirectory).Directory.FullName | select -Unique
+        $dest = (Get-Item -Path $this.DestinationDirectory).FullName | select -Unique
+        Start-Process -FilePath $nugetExe -ArgumentList "init $src $dest" -Wait
+    }
+
+    [bool] Test()
+    {
+        $src = $this.SourceDirectory
+        $dest = $this.DestinationDirectory
+
+        if ((Test-Path $src) -and (Test-Path $dest))
+        {
+            Write-Verbose "Both the source and destination directories were found."
+            $srcCount = (Get-ChildItem -Path $src).Count
+            $destCount = ((Get-ChildItem -Path $dest) | Where name -notlike "*.bin").Count
+            if ($srcCount -eq $destCount) 
+            {
+                Write-Verbose "It appears the same amount of packages are registered in both the source and the destination directories." 
+                return $true 
+            }
+            else 
+            {
+                Write-Verbose "Source has $srcCount items.  Destination has $destCount items." 
+                return $false 
+            }
+        }
+        else 
+        {
+            Write-Error "The Source or Destination Directory does not exist"
+            return $false
+        }
+        return $false
     }
 }
